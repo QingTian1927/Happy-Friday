@@ -41,8 +41,9 @@ class ApiHelper {
 
       return response.data;
     } catch (error: any) {
-      if(error instanceof AxiosError){
-        throw new Error(error.message);
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || error.message || "Request failed";
+        throw new Error(message);
       }
       throw error;
     }
@@ -79,10 +80,42 @@ class ApiHelper {
     }
   }
 
+  async patchJson(endpoint: string, data: any){
+    try{
+      const token= localStorage.getItem("accessToken");
+      const response= await axios.patch(`${this.baseURL}${endpoint}`, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+      });
+      return response.data;
+    }catch(error){
+      this.handleError(error);
+    }
+  }
+
   async post(url: string, data: any): Promise<any> {
     try {
       const token = localStorage.getItem("accessToken");
       const response = await axios.post(`${this.baseURL}${url}`, data, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      this.handleError(error);
+    }
+  }
+
+
+  async patch(url: string, data: any): Promise<any> {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.patch(`${this.baseURL}${url}`, data, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -109,6 +142,30 @@ class ApiHelper {
       this.handleError(error);
     }
   }
+
+
+  async delete(url: string): Promise<any> {
+    try {
+      const token = localStorage.getItem("accessToken");
+      console.log('ApiHelper DELETE:', { url: `${this.baseURL}${url}`, token: token ? 'exists' : 'missing' });
+      const response = await axios.delete(`${this.baseURL}${url}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.log('ApiHelper DELETE error:', error.response?.data || error.message);
+      this.handleError(error);
+    }
+  }
+
 }
 
 export default ApiHelper;
+
+
+
+

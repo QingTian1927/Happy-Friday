@@ -38,11 +38,15 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     const user = data.user;
+    // DEBUG LOGS - remove after verification
+    console.log('[Auth] SUPABASE_URL:', process.env.SUPABASE_URL);
+    console.log('[Auth] login user.id:', user.id, 'email:', user.email);
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
-      .select('avatar_url')
+      .select('avatar_url, role_id')
       .eq('id', user.id)
       .single();
+    console.log('[Auth] db profile:', profile);
     if (profileError)
       throw new InternalServerErrorException(
         'Internal Server Error: ' + profileError.message,
@@ -50,7 +54,8 @@ export class AuthService {
 
     return {
       ...user,
-      avatar_url: profile?.avatar_url ?? null,
+      role_id: profile?.role_id ?? null,
+      avatar_url: profile?.avatar_url ?? null
     };
   }
 
@@ -62,7 +67,23 @@ export class AuthService {
     };
   }
 
-  async forgetPassword(model: ForgetPasswordDto){
+  async sendOTP(model: ForgetPasswordDto){
+    const otp= Math.floor(100000 +Math.random() * 900000).toString();
 
+    await supabaseAdmin.from('password_reset_otp').insert({
+      email: model.confirmEmail,
+      otp,
+      expired_at: new Date(Date.now() + 10 * 60 * 1000)
+    });
+
+    // Email sender is disabled by default to avoid dependency issues.
+    // If you want to enable, install nodemailer and configure env, then implement here.
+    console.log('[Auth] Generated OTP for', model.confirmEmail, '=>', otp);
+    return { message: 'OTP generated' };
   }
+
+  async verifyOTP(email: string, otp: string){
+    
+  }
+
 }
